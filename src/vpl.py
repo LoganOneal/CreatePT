@@ -1053,7 +1053,7 @@ class FindCircles(VPL):
                 cv2.rectangle(image, (x - 5, y - 5), (x + 5, y + 5), (0, 128, 255), -1)
         return image, data
  
-class interface(VPL):
+class Interface(VPL):
 
     def process(self, pipe, image, data):
         height, width, depth = image.shape
@@ -1080,9 +1080,24 @@ class interface(VPL):
 
         cv2.line(image, pt1_left, pt2_left, color, thickness=6, lineType=cv2.LINE_AA, shift=0)
         cv2.line(image, pt1_right, pt2_right, color, thickness=6, lineType=cv2.LINE_AA, shift=0)
+            
 
 
-        print(left_bar, right_bar)
+
+        return image, data
+
+
+
+        
+
+class Score(VPL):
+
+    def process(self, pipe, image, data):
+        contours = data[self["key"]]
+        for center, radius in contours:
+            x,y = center
+            if radius is None:
+                print('no ball')
 
 
         return image, data

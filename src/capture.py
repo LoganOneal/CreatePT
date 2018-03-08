@@ -73,7 +73,9 @@ pipe.add_vpl(vpl.ConvertColor(conversion=cv2.COLOR_HSV2BGR))
 #Draws dot on center point of convex hull
 pipe.add_vpl(vpl.DrawContours(key="contours"))
 
-fork.add_vpl(vpl.interface(key="contours"))
+#user interface module
+fork.add_vpl(vpl.Interface(key="contours"))
+pipe.add_vpl(vpl.Score(key="contours"))
 
 
 # add a FPS counter
@@ -87,7 +89,6 @@ if not args.noshow:
     fork.add_vpl(vpl.Display(title="fork"))
 if args.stream is not None:
     fork.add_vpl(vpl.MJPGServer(port=args.stream))
-#server='roboRIO-3966-frc.local
 
 try:
       # we let our VideoSource do the processing, autolooping
