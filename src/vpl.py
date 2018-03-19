@@ -842,19 +842,8 @@ class FindContours(VPL):
             M = cv2.moments(c)
             center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
             # only proceed if the radius meets a minimum size
-            if (radius > 10):
-
-
-#working area
-                '''
-                img = cv2.medianBlur(image,5)
-                cimg = cv2.cvtColor(img,cv2.COLOR_GRAY2BGR)
-                circles = cv2.HoughCircles(img,cv2.HOUGH_GRADIENT,1,10,param1=100,param2=30,minRadius=5,maxRadius=50)
-                circles = np.uint16(np.around(circles))
-                for i in circles[0,:]:
-                    cv2.circle(cimg,(i[0],i[1]),i[2],(0,255,0),1) # draw the outer circle
-                    cv2.circle(cimg,(i[0],i[1]),2,(0,0,255),3) # draw the center of the circle
-                '''
+            if (radius > 5):
+               
                 data[self["key"]] += [[center, radius]]
                 
                 # draw the circle and centroid on the frame,
@@ -864,6 +853,8 @@ class FindContours(VPL):
 
                 #cv.rectangle(frame , ((int(x)- int(radius), (int(y)+int(radius)) , (1,1),(0,255,0),3)
                 cv2.circle(image, center, 5, (255 * (ct % 3 == 2), 255 * (ct % 3 == 1), 255 * (ct % 3 == 0)), -1)
+            
+
                 
             ct += 1
         return image, data
@@ -1092,12 +1083,36 @@ class Interface(VPL):
 
 class Score(VPL):
 
+    def __init__(self, **kwargs):
+        self.ct = 0
+        self.kwargs = kwargs
+        #number of frames that must pass for point to be awarded
+        self.count = 200
+
+     
+    def check(self):
+        if self.visible == True:
+            self.ct = 0
+            print('true')
+
+        elif self.visible == False:
+            self.ct = self.ct + 1
+            if self.ct > self.count:
+                print('point awarded')
+                self.ct = 0
+            
+
+
     def process(self, pipe, image, data):
-        contours = data[self["key"]]
-        for center, radius in contours:
-            x,y = center
-            if radius is None:
-                print('no ball')
+        self.contours = data[self["key"]]
+        if not self.contours:
+            self.visible = False
 
-
+        if self.contours:
+            self.visible = True
+        
+        self.check()
+            
         return image, data
+
+        
