@@ -1088,19 +1088,85 @@ class Score(VPL):
         self.kwargs = kwargs
         #number of frames that must pass for point to be awarded
         self.count = 200
+        self.pos = None
+        self.posList = []
 
      
     def check(self):
         if self.visible == True:
             self.ct = 0
-            print('true')
 
         elif self.visible == False:
             self.ct = self.ct + 1
             if self.ct > self.count:
-                print('point awarded')
+                point = True
                 self.ct = 0
+            else:
+                point = False
+            return point
+                
+    
+    def interface(self, image):
+        height, width, depth = image.shape
+
+        
+        cv2.namedWindow('options',cv2.WINDOW_NORMAL)
+
+        def nothing(x):
+            pass
+
+        cv2.createTrackbar('End of Table Left','options',0,50,nothing)
+        cv2.createTrackbar('End of Table Right','options',0,50,nothing)
+        cv2.resizeWindow('options', 600,100)
+
+        left_bar = cv2.getTrackbarPos('End of Table Left', 'options')
+        right_bar = cv2.getTrackbarPos('End of Table Right', 'options')
+        
+        color = (255,255,0)
+        pt1_left = (left_bar*5, 0)
+        pt2_left = (left_bar*5, height)
+
+
+        pt1_right = (width - (right_bar*5), 0)
+        pt2_right = (width - (right_bar*5), height)
+
+        cv2.line(image, pt1_left, pt2_left, color, thickness=6, lineType=cv2.LINE_AA, shift=0)
+        cv2.line(image, pt1_right, pt2_right, color, thickness=6, lineType=cv2.LINE_AA, shift=0)
+
+        self.left = left_bar*5
+        self.right = width - (right_bar*5)
+
+    def position(self):
+        for center, radius in self.contours:
+            x,y = center
+            if x < self.left:
+                self.pos = 'left'
+            if x > self.right:
+                self.pos = 'right'
+            if (x > self.left) and (x < self.right):
+                self.pos = 'middle'
+            return self.pos
             
+    def score(self):
+        pos = self.position()
+        self.posList.append(pos)
+        recent = self.posList[(len(self.posList)-1)]
+        latter = self.posList[(len(self.posList)-2)]
+       # print(recent, latter)
+        if recent is None:
+            if latter == "right":
+                print(self.check())
+            elif latter == "left":
+                print(self.check())
+            else:
+                pass
+        #for i in recent:
+        #    if i is None:
+
+            #    print('tesf')
+
+        
+
 
 
     def process(self, pipe, image, data):
@@ -1110,9 +1176,10 @@ class Score(VPL):
 
         if self.contours:
             self.visible = True
-        
-        self.check()
-            
-        return image, data
 
-        
+        self.interface(image)
+
+        self.position()
+        self.score()
+
+        return image, data

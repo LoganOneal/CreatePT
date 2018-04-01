@@ -73,8 +73,7 @@ pipe.add_vpl(vpl.ConvertColor(conversion=cv2.COLOR_HSV2BGR))
 #Draws dot on center point of convex hull
 pipe.add_vpl(vpl.DrawContours(key="contours"))
 
-#user interface module
-fork.add_vpl(vpl.Interface(key="contours"))
+#user score module
 pipe.add_vpl(vpl.Score(key="contours"))
 
 
