@@ -73,8 +73,12 @@ pipe.add_vpl(vpl.ConvertColor(conversion=cv2.COLOR_HSV2BGR))
 #Draws dot on center point of convex hull
 pipe.add_vpl(vpl.DrawContours(key="contours"))
 
-#user score module
-pipe.add_vpl(vpl.Score(key="contours"))
+pipe.add_vpl(vpl.DrawMeter(key="contours"))
+
+#use score module
+#pipe.add_vpl(vpl.Score(key="contours"))
+
+
 
 
 # add a FPS counter

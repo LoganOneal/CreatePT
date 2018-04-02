@@ -770,10 +770,40 @@ class InRange(VPL):
     Usage: InRange(H=(20, 40), S=(30, 60), V=(100, 200), mask_key=None)
 
     """
+    def interface(self, image):
+        height, width, depth = image.shape
+
+        cv2.namedWindow('HSV Values',cv2.WINDOW_NORMAL)
+
+        def nothing(x):
+            pass
+
+        cv2.createTrackbar('H Min','HSV Values',0,255,nothing)
+        cv2.createTrackbar('H Max','HSV Values',157,255,nothing)
+
+        cv2.createTrackbar('S Min','HSV Values',0,255,nothing)
+        cv2.createTrackbar('S Max','HSV Values',88,255,nothing)
+
+        cv2.createTrackbar('V Min','HSV Values',197,255,nothing)
+        cv2.createTrackbar('V Max','HSV Values',255,255,nothing)
+
+        cv2.resizeWindow('HSV Values', 600,100)
+
+        self.h_min = cv2.getTrackbarPos('H Min', 'HSV Values')
+        self.h_max = cv2.getTrackbarPos('H Max', 'HSV Values')
+
+        self.s_min = cv2.getTrackbarPos('S Min', 'HSV Values')
+        self.s_max = cv2.getTrackbarPos('S Max', 'HSV Values')
+
+        self.v_min = cv2.getTrackbarPos('V Min', 'HSV Values')
+        self.v_max = cv2.getTrackbarPos('V Max', 'HSV Values')
+
+
     def process(self, pipe, image, data):
-        H = self.get("H", (0, 157))
-        S = self.get("S", (0, 88))
-        V = self.get("V", (197, 255))
+        self.interface(image)
+        H = self.get("H", (self.h_min, self.h_max))
+        S = self.get("S", (self.s_min, self.s_max))
+        V = self.get("V", (self.v_min, self.v_max))
         mask = cv2.inRange(image, (H[0],S[0],V[0]), (H[1],S[1],V[1]))
         mask_key = self.get("mask_key", None)
         if mask_key is not None:
@@ -885,12 +915,12 @@ class RestoreImage(VPL):
         return image, data
 
 
-'''
 class DrawMeter(VPL):
     
 
-    Draws a rectangle in the lower left hand corner and scales the x values of the center point. Similar to our previous implementation of light on the robot. 
-
+    '''
+    Tracks the object on a horizontal scale
+    '''
     
 
     def process(self, pipe, image, data):
@@ -913,117 +943,11 @@ class DrawMeter(VPL):
             cv2.rectangle(image,((int(((x/w)*bar_width)+330)),h-5), ((int(((x/w)*bar_width)+350)),h-55), bar_color, cv2.FILLED)
 
         return image, data
-'''
 
-class CoolChannelOffset(VPL):
-
-    def process(self, pipe, image, data):
-        h, w, nch = image.shape
-        ch = cv2.split(image)
-        for i in range(nch):
-            xoff = 8 * i
-            yoff = 0
-            ch[i] = np.roll(np.roll(image[:,:,i], yoff, 0), xoff, 1)
-            #image[:,:,i] = np.roll(image[:,:,i], 10, 1)
-
-        image = cv2.merge(ch)
-
-        return image, data
-
-import math
-
-class Bleed(VPL):
-
-    def process(self, pipe, image, data):
-        N = self.get("N", 18)
-        if not hasattr(self, "buffer"):
-            self.buffer = []
-
-        self.buffer.insert(0, image.copy())
-
-        if len(self.buffer) >= N:
-            self.buffer = self.buffer[:N]
-
-        #a = [len(self.buffer) - i + N for i in range(0, len(self.buffer))]
-        a = [1.0 / (i + 1) for i in range(0, len(self.buffer))]
-
-        # normalize
-        a = [a[i] / sum(a) for i in range(len(a))]
-
-        image[:,:,:] = 0
-
-        for i in range(len(a)):
-            image = cv2.addWeighted(image, 1.0, self.buffer[i], a[i], 0)
-
-        return image, data
-
-
-class Pixelate(VPL):
-
-    def process(self, pipe, image, data):
-        N = self.get("N", 7.5)
-
-        h, w, d = image.shape
-
-        image = cv2.resize(image, (int(w // N), int(h // N)), interpolation=cv2.INTER_NEAREST)
-        image = cv2.resize(image, (w, h), interpolation=cv2.INTER_NEAREST)
-
-        return image, data
-
-class Noise(VPL):
-
-    def process(self, pipe, image, data):
-        level = self.get("level", .125)
-
-        m = (100,100,100) 
-        s = (100,100,100)
-        noise = np.zeros_like(image)
-
-        image = cv2.addWeighted(image, 1 - level, cv2.randn(noise, m, s), level, 0)
-
-        return image, data
-
-
-class DetailEnhance(VPL):
-
-    def process(self, pipe, image, data):
-        image = cv2.detailEnhance(image, sigma_s=self.get("r", 10), sigma_r=self.get("s", .15))
-        return image, data
-
-
-class Cartoon(VPL):
-
-    def process(self, pipe, image, data):
-        down = self.get("down", 2)
-        bilateral = self.get("bilateral", 7)
-
-        for i in range(down):
-            image = cv2.pyrDown(image)
-
-        for i in range(bilateral):
-            image = cv2.bilateralFilter(image, d=9,
-                                    sigmaColor=9,
-                                    sigmaSpace=7)
-
-        for i in range(down):
-            image = cv2.pyrUp(image)
-
-        image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        image_blur = cv2.medianBlur(image_gray, 7)
-
-        image_edge = cv2.adaptiveThreshold(image_blur, 255,
-                                 cv2.ADAPTIVE_THRESH_MEAN_C,
-                                 cv2.THRESH_BINARY,
-                                 blockSize=9,
-                                 C=2)
-
-        image_edge = cv2.cvtColor(image_edge, cv2.COLOR_GRAY2RGB)
-        image_cartoon = cv2.bitwise_and(image, image_edge)
-
-        return image_cartoon, data
 
 
 
+import math
 
 class FindCircles(VPL):
 
@@ -1042,44 +966,7 @@ class FindCircles(VPL):
                 # corresponding to the center of the circle
                 cv2.circle(image, (x, y), r, (0, 255, 0), 4)
                 cv2.rectangle(image, (x - 5, y - 5), (x + 5, y + 5), (0, 128, 255), -1)
-        return image, data
- 
-class Interface(VPL):
-
-    def process(self, pipe, image, data):
-        height, width, depth = image.shape
-
-        
-        cv2.namedWindow('options',cv2.WINDOW_NORMAL)
-
-        def nothing(x):
-            pass
-
-        cv2.createTrackbar('End of Table Left','options',0,50,nothing)
-        cv2.createTrackbar('End of Table Right','options',0,50,nothing)
-        cv2.resizeWindow('options', 600,100)
-
-        left_bar = cv2.getTrackbarPos('End of Table Left', 'options')
-        right_bar = cv2.getTrackbarPos('End of Table Right', 'options')
-        
-        color = (255,255,0)
-        pt1_left = (left_bar*5, 0)
-        pt2_left = (left_bar*5, height)
-
-        pt1_right = (width - (right_bar*5), 0)
-        pt2_right = (width - (right_bar*5), height)
-
-        cv2.line(image, pt1_left, pt2_left, color, thickness=6, lineType=cv2.LINE_AA, shift=0)
-        cv2.line(image, pt1_right, pt2_right, color, thickness=6, lineType=cv2.LINE_AA, shift=0)
-            
-
-
-
-        return image, data
-
-
-
-        
+        return image, data    
 
 class Score(VPL):
 
