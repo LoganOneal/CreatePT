@@ -860,33 +860,23 @@ class FindContours(VPL):
 
         data[self["key"]] = []
 
-        # only proceed if at least one contour was found
         if len(cnts) > 0:
-            # find the largest contour in the mask, then use
-            # it to compute the minimum enclosing circle and
-            # centroid
+  
             c = max(cnts, key=cv2.contourArea)
-            ct = 0
-            #for c in filter(lambda x: cv2.contourArea(x) > 15, cnts):
             ((x, y), radius) = cv2.minEnclosingCircle(c)
             M = cv2.moments(c)
             center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-            # only proceed if the radius meets a minimum size
+
+            # minimum radius size
             if (radius > 5):
-               
+                #other modules use this data
                 data[self["key"]] += [[center, radius]]
                 
-                # draw the circle and centroid on the frame,
-                # then update the list of tracked points
-                cv2.rectangle(image ,(int(x)-int(radius), int(y)+int(radius)),(int(x)+int(radius), int(y)-int(radius)),(0,255,0),3)
-                cv2.putText(image,'LargestContour ' + str(round(x,1)) + ' ' + str(round(y,1)),(int(x)-int(radius), int(y)-int(radius)), cv2.FONT_HERSHEY_PLAIN, 2*(int(radius)/45),(255,255,255),2,cv2.LINE_AA)
-
-                #cv.rectangle(frame , ((int(x)- int(radius), (int(y)+int(radius)) , (1,1),(0,255,0),3)
-                cv2.circle(image, center, 5, (255 * (ct % 3 == 2), 255 * (ct % 3 == 1), 255 * (ct % 3 == 0)), -1)
+            #draw the center point
+            cv2.circle(image, center, 5, (255, 255, 255), -1)
             
 
                 
-            ct += 1
         return image, data
 
 class DrawContours(VPL):
