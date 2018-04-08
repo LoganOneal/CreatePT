@@ -853,7 +853,6 @@ class FindContours(VPL):
 
     """
     def process(self, pipe, image, data):
-        # find contours in the mask and initialize the current
         
         cnts = cv2.findContours(image, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2]
         center = None
